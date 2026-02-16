@@ -12,13 +12,18 @@ def is_valid_dir(path: Path) -> Path | None:
         if is_valid_kape:
             print("Confirmed KAPE heuristics")
             return path
+        else:
+            print("Not valid KAPE")
+            return None
     print("Unsupported input.")
     return None
 
 
 def is_valid_kape_output(path: Path) -> bool:
-    for p in path.glob("*ConsoleLog*"):
-        print(p, type(p))
-    return True
+    pattern = "*ConsoleLog*"
+    if any(path.glob(pattern)):
+        for p in path.glob("*ConsoleLog*"):
+            print(p, type(p))
+        return True
 
-
+    return False
