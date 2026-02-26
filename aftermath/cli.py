@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 from aftermath.dir_ingest import is_valid_dir
+from aftermath.scan import scan_folders
 
 
 def build_parser():
@@ -25,6 +26,9 @@ def main():
     validated_path = is_valid_dir(in_path)
     if validated_path is None:
         return 1
+
+    results = scan_folders(validated_path)
+    print(results)
 
     return 0
 
