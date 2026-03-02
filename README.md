@@ -22,6 +22,6 @@ During export it generates a `manifest.jsonl` that includes a SHA-256 hash per a
 - Python 3.12+
 
 ## Usage
-'''bash
+```bash
 python3 -m aftermath.cli -i /path/to/KAPE_output -o /path/to/triaged_output
-
+```
