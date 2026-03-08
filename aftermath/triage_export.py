@@ -2,16 +2,9 @@ import hashlib
 import json
 import shutil
 from pathlib import Path
-
-SYSTEM_HIVES = {"SYSTEM", "SOFTWARE", "SAM", "SECURITY", "HARDWARE"}
-USER_HIVES = {"NTUSER.DAT", "USRCLASS.DAT"}
-
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif",
-              ".bmp", ".tif", ".tiff", ".webp", ".heic"}
-PDF_EXTS = {".pdf"}
-DB_EXTS = {".sqlite", ".db"}
-PREFETCH_EXTS = {".pf"}
-LNK_EXTS = {".lnk"}
+from aftermath.artifact_rules import (
+    SYSTEM_HIVES, USER_HIVES, EXACT_NAME_BUCKETS,
+    PREFIX_BUCKETS, HIVE_LOG_BUCKETS, EXTENSION_BUCKETS,)
 
 
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -30,25 +23,19 @@ def classify_file(p: Path) -> str:
     name, ext = p.name.upper(), p.suffix.lower()
 
     if name in SYSTEM_HIVES:
-        return "hives/system"
+        return "hives/system/core"
 
     if name in USER_HIVES:
-        return "hives/user"
-
-    if ext in PREFETCH_EXTS:
-        return "prefetch"
-
-    if ext in LNK_EXTS:
-        return "shortcuts"
-
-    if ext in IMAGE_EXTS:
-        return "pictures"
-
-    if ext in PDF_EXTS:
-        return "pdfs"
-
-    if ext in DB_EXTS:
-        return "databases"
+        return "hives/user/core"
+    if name in EXACT_NAME_BUCKETS:
+        return EXACT_NAME_BUCKETS[name]
+    if name in HIVE_LOG_BUCKETS:
+        return HIVE_LOG_BUCKETS[name]
+    for k, v in PREFIX_BUCKETS.items():
+        if name.startswith(k):
+            return v
+    if ext in EXTENSION_BUCKETS:
+        return EXTENSION_BUCKETS[ext]
 
     return "other"
 
@@ -76,7 +63,7 @@ def export_triaged(kape_path: Path, out_path: Path) -> dict:
             # collisions handling
             if dest.exists():
                 stem = p.stem
-                suffix = p.suffix  # includes leading dot, or "" if none
+                suffix = p.suffix
                 n = 2
                 while True:
                     candidate = bucket_dir / f"{stem}__{n}{suffix}"
