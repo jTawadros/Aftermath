@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 
 def is_valid_dir(path: Path) -> Path | None:

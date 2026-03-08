@@ -3,6 +3,7 @@ import pathlib
 from aftermath.dir_ingest import is_valid_dir
 from aftermath.scan import scan_folders
 from aftermath.triage_export import classify_file, export_triaged
+from aftermath.formatted_prints import print_filecounts
 
 
 def build_parser():
@@ -44,7 +45,9 @@ def main():
     bucket_counts = export_triaged(validated_path, triaged_root)
 
     results = scan_folders(validated_path)
-    print(results)
+    print_filecounts(results)
+
+
 
     return 0
 
