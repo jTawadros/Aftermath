@@ -60,45 +60,45 @@ def export_triaged(kape_path: Path, out_path: Path) -> dict:
     bucket_counts: dict[str, int] = {}
     manifest = out_path / "manifest.jsonl"
 
-    for p in kape_path.rglob('*'):
-        # exit section before trying to define a folder
-        if not p.is_file():
-            continue
+    with manifest.open("a", encoding='utf-8') as man:
+        for p in kape_path.rglob('*'):
+            # exit section before trying to define a folder
+            if not p.is_file():
+                continue
 
-        # stores path for triaged folder. e.g.  'hives/system'
-        bucket = classify_file(p)
-        bucket_dir = out_path / bucket
-        bucket_dir.mkdir(parents=True, exist_ok=True)
+            # stores path for triaged folder. e.g.  'hives/system'
+            bucket = classify_file(p)
+            bucket_dir = out_path / bucket
+            bucket_dir.mkdir(parents=True, exist_ok=True)
 
-        dest = bucket_dir / p.name
+            dest = bucket_dir / p.name
 
-        # collisions handling
-        if dest.exists():
-            stem = p.stem
-            suffix = p.suffix  # includes leading dot, or "" if none
-            n = 2
-            while True:
-                candidate = bucket_dir / f"{stem}__{n}{suffix}"
-                if not candidate.exists():
-                    dest = candidate
-                    break
-                n += 1
-        src_sha256 = sha256_file(p)
+            # collisions handling
+            if dest.exists():
+                stem = p.stem
+                suffix = p.suffix  # includes leading dot, or "" if none
+                n = 2
+                while True:
+                    candidate = bucket_dir / f"{stem}__{n}{suffix}"
+                    if not candidate.exists():
+                        dest = candidate
+                        break
+                    n += 1
+            src_sha256 = sha256_file(p)
 
-        shutil.copy2(p, dest)
-        bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
+            shutil.copy2(p, dest)
+            bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
 
-        # Input into manifest
-        record = {
-            "bucket": bucket,
-            "relative_source": str(p.relative_to(kape_path)),
-            "src": str(p),
-            "relative_destination": str(dest.relative_to(out_path)),
-            "size": p.stat().st_size,
-            "sha256": src_sha256,
-        }
+            # Input into manifest
+            record = {
+                "bucket": bucket,
+                "relative_source": str(p.relative_to(kape_path)),
+                "src": str(p),
+                "relative_destination": str(dest.relative_to(out_path)),
+                "size": p.stat().st_size,
+                "sha256": src_sha256,
+            }
 
-        with manifest.open("a", encoding="utf-8") as man:
             man.write(json.dumps(record) + "\n")
 
     return bucket_counts
