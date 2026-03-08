@@ -17,6 +17,12 @@ During export it generates a `manifest.jsonl` that includes a SHA-256 hash per a
 - 'aftermath/triage_export.py'
     Artifact classification + export into bucketed folders + SHA-256 manifest
 
+- 'aftermath/formatted_prints.py'
+    Formatted Printing for an easy understanding from the console.
+
+- 'aftermath/artifact_rules.py'
+    Rule set filled with dictionaries containing naming conventions, file extensions, and export path.
+
 
 ## Requirements
 - Python 3.12+
@@ -59,3 +65,13 @@ A manifest.jsonl is generated in the new output directory. Each line is a JSON o
 
 The manifest is meant to provide a bit of traceability to the original KAPE capture
 in addition to allowing integrity verification of the triaged copy.
+
+## Tech Stack
+### Core Language
+- **Python 3**
+### Key Libraries
+- **argparse** - CLI for running the triage tool.
+- **pathlib** - Cross-platform filesystem navigation and path handling.
+- **hashlib** - SHA256 hashing to verify artifact integrity.
+- **json** - Creation of manifest.json.
+- **shutil** - File copying during export.
