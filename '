@@ -1,8 +1,0 @@
-def print_filecounts(ext_counts: dict):
-    for key, val in ext_counts.items():
-        if key != "extension_counts":
-            print(f"{key:<14} | {val:>10}")
-        else:
-            print(" ========== FILE COUNTS BY EXTENSIONS ========== ")
-            for k, v in val.items():
-                print(f"{k:<14} | {v:>10}")
