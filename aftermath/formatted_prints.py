@@ -7,3 +7,8 @@ def print_filecounts(ext_counts: dict):
             print(" ========== FILE COUNTS BY EXTENSIONS ========== ")
             for k, v in val.items():
                 print(f"{k:<16} | {v:>14}")
+
+def print_bucket_counts(bucket_counts: dict):
+    print(" ============== TRIAGE BUCKET COUNTS ============= ")
+    for bucket, count in sorted(bucket_counts.items()):
+        print(f"{bucket:<24} | {count:>10}")
