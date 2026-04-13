@@ -25,6 +25,18 @@ def build_parser():
                         required=False,
                         help="Output directory for triaged files")
 
+    # sensitivy parsers
+    parser.add_argument(
+        "--sensitivity",
+        action="store_true",
+        help="Generate sensitivity report from manifest"
+    )
+    parser.add_argument(
+        "--show-sensitive",
+        choices=["HIGH", "MEDIUM", "LOW"],
+        help="Show files of a given sensitivity level"
+    )
+
     parser.add_argument(
         "--manifest",
         required=False,
@@ -90,6 +102,27 @@ def main():
             print("Manifest path does not exist.")
             return 1
 
+        from aftermath.sensitivity import (
+            generate_sensitivity_report,
+            print_sensitivity_report,
+            filter_by_sensitivity,
+        )
+        from aftermath.manifest_query import load_manifest
+
+        if args.sensitivity:
+            counts, sizes = generate_sensitivity_report(manifest_path)
+            print_sensitivity_report(counts, sizes)
+            return 0
+
+        if args.show_sensitive:
+            records = load_manifest(manifest_path)
+            filtered = filter_by_sensitivity(records, args.show_sensitive)
+
+            print_manifest_results(
+                filtered[:args.limit] if args.limit else filtered
+            )
+            return 0
+
         results = query_manifest(
             manifest_path,
             bucket=args.bucket,
@@ -126,6 +159,7 @@ def main():
     print_filecounts(results)
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
