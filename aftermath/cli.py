@@ -117,11 +117,12 @@ def main():
         from aftermath.manifest_query import load_manifest
 
         if args.sensitivity:
-            counts, sizes, flagged = generate_sensitivity_report(manifest_path)
+            counts, sizes, flagged, registry_findings = generate_sensitivity_report(manifest_path)
             print_sensitivity_report(
                 counts,
                 sizes,
                 flagged,
+                registry_findings,
                 limit=args.limit if args.limit else 25,
             )
             return 0

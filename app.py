@@ -1,4 +1,5 @@
 from pathlib import Path
+from aftermath.registry_parse import summarize_registry_findings
 import sys
 
 from PySide6.QtWidgets import (
@@ -276,7 +277,7 @@ class AftermathWindow(QMainWindow):
             self.sensitivity_output_box.setText("Manifest path does not exist.")
             return
 
-        counts, sizes, flagged = generate_sensitivity_report(manifest_path)
+        counts, sizes, flagged, registry_findings = generate_sensitivity_report(manifest_path)
 
         lines = []
         lines.append("SENSITIVITY / PRIORITY REPORT")
@@ -330,8 +331,25 @@ class AftermathWindow(QMainWindow):
                 lines.append(f"    size                 : {record.get('size', '')}")
                 lines.append(f"    sha256               : {record.get('sha256', '')}")
                 lines.append("")
+                lines.append("")
+        lines.append("REGISTRY ANALYST SUMMARY")
+        lines.append("")
+
+        if not registry_findings:
+            lines.append("No registry hive findings available.")
+        else:
+            lines.extend(summarize_registry_findings(registry_findings))
+
+            lines.append("")
+            lines.append("RAW REGISTRY DETAILS")
+            lines.append("")
+
+            for path, report in registry_findings.items():
+                lines.append(report)
+                lines.append("=" * 80)
 
         self.sensitivity_output_box.setText("\n".join(lines))
+
 
     def build_integrity_tab(self):
         tab = QWidget()
