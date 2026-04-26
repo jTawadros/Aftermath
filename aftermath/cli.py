@@ -2,9 +2,10 @@ import argparse
 import pathlib
 from aftermath.dir_ingest import is_valid_dir
 from aftermath.scan import scan_folders
-from aftermath.triage_export import classify_file, export_triaged
+from aftermath.triage_export import export_triaged
 from aftermath.formatted_prints import print_filecounts, print_bucket_counts
 from aftermath.manifest_query import query_manifest, print_manifest_results
+from aftermath.verify import verify_manifest_integrity, print_integrity_results
 
 
 def build_parser():
@@ -87,6 +88,12 @@ def build_parser():
         required=False,
         help="Maximum number of results to print"
     )
+    parser.add_argument(
+        '-vi',
+        "--verify-integrity",
+        action="store_true",
+        help="Recomput SHA256 of triaged files and verify against manifest"
+    )
 
     return parser
 
@@ -110,8 +117,13 @@ def main():
         from aftermath.manifest_query import load_manifest
 
         if args.sensitivity:
-            counts, sizes = generate_sensitivity_report(manifest_path)
-            print_sensitivity_report(counts, sizes)
+            counts, sizes, flagged = generate_sensitivity_report(manifest_path)
+            print_sensitivity_report(
+                counts,
+                sizes,
+                flagged,
+                limit=args.limit if args.limit else 25,
+            )
             return 0
 
         if args.show_sensitive:
@@ -121,6 +133,10 @@ def main():
             print_manifest_results(
                 filtered[:args.limit] if args.limit else filtered
             )
+            return 0
+        if args.verify_integrity:
+            mismatches, missing = verify_manifest_integrity(manifest_path)
+            print_integrity_results(mismatches, missing)
             return 0
 
         results = query_manifest(
