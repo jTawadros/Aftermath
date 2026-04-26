@@ -3,6 +3,13 @@
 from collections import Counter
 from pathlib import Path
 from aftermath.manifest_query import load_manifest
+from aftermath.registry_parse import parse_registry_hives_from_triage
+from aftermath.registry_parse import (parse_registry_hives_from_triage, summarize_registry_findings,)
+
+
+def generate_registry_findings_from_manifest(manifest_path: Path) -> dict[str, str]:
+    triaged_root = manifest_path.parent
+    return parse_registry_hives_from_triage(triaged_root)
 
 
 SENSITIVE_BUCKETS = {
@@ -47,11 +54,11 @@ CREDENTIAL_KEYWORDS = [
 
 EMAIL_KEYWORDS = [
     "email",
-    "mail",
+    "mailbox",
     "outlook",
     "thunderbird",
-    "pst",
-    "ost",
+    ".pst",
+    ".ost",
 ]
 
 
@@ -178,10 +185,12 @@ def generate_sensitivity_report(manifest_path: Path):
         reverse=True,
     )
 
-    return counts, size_totals, flagged
+    registry_findings = generate_registry_findings_from_manifest(manifest_path)
+
+    return counts, size_totals, flagged, registry_findings
 
 
-def print_sensitivity_report(counts, sizes, flagged, limit: int = 25):
+def print_sensitivity_report(counts, sizes, flagged, registry_findings, limit: int = 25):
     print(" ===== SENSITIVITY / PRIORITY REPORT ===== ")
     print()
 
@@ -190,30 +199,46 @@ def print_sensitivity_report(counts, sizes, flagged, limit: int = 25):
         print(f"{level:<10} | files: {counts[level]:>6} | bytes: {sizes[level]:>12}")
 
     print()
-    print(f"Top flagged artifacts for review: {
-          min(len(flagged), limit)} shown")
+    print(f"Top flagged artifacts for review: {min(len(flagged), limit)} shown")
     print()
 
     if not flagged:
         print("No high or medium priority artifacts were flagged.")
+    else:
+        for i, item in enumerate(flagged[:limit], start=1):
+            record = item["record"]
+
+            print(f"[{i}] {item['level']}")
+            print(f"    bucket               : {record.get('bucket', '')}")
+            print(f"    relative_source      : {record.get('relative_source', '')}")
+            print(f"    relative_destination : {record.get('relative_destination', '')}")
+            print(f"    size                 : {record.get('size', '')}")
+            print(f"    sha256               : {record.get('sha256', '')}")
+            print("    reason(s):")
+
+            for reason in item["reasons"]:
+                print(f"      - {reason}")
+
+            print()
+
+        print()
+    print(" ===== REGISTRY ANALYST SUMMARY ===== ")
+    print()
+
+    if not registry_findings:
+        print("No registry hive findings available.")
         return
 
-    for i, item in enumerate(flagged[:limit], start=1):
-        record = item["record"]
+    for line in summarize_registry_findings(registry_findings):
+        print(line)
 
-        print(f"[{i}] {item['level']}")
-        print(f"    bucket               : {record.get('bucket', '')}")
-        print(f"    relative_source      : {
-              record.get('relative_source', '')}")
-        print(f"    relative_destination : {
-              record.get('relative_destination', '')}")
-        print(f"    size                 : {record.get('size', '')}")
-        print(f"    sha256               : {record.get('sha256', '')}")
-        print("    reason(s):")
-        for reason in item["reasons"]:
-            print(f"      - {reason}")
-        print()
+    print()
+    print(" ===== RAW REGISTRY DETAILS ===== ")
+    print()
 
+    for path, report in registry_findings.items():
+        print(report)
+        print("=" * 80)
 
 def filter_by_sensitivity(records, level):
     return [r for r in records if classify_sensitivity(r) == level]
