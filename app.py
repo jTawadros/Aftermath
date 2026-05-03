@@ -1,7 +1,6 @@
 from pathlib import Path
 from aftermath.registry_parse import summarize_registry_findings
 import sys
-
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -18,6 +17,8 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 
+from PySide6.QtCharts import QChart, QChartView, QPieSeries
+from PySide6.QtGui import QPainter, QColor
 from aftermath.dir_ingest import is_valid_kape_output
 from aftermath.triage_export import export_triaged
 from aftermath.scan import scan_folders
@@ -245,6 +246,10 @@ class AftermathWindow(QMainWindow):
         self.sensitivity_output_box = QTextEdit()
         self.sensitivity_output_box.setReadOnly(True)
 
+        self.sensitivity_chart_view = QChartView()
+        self.sensitivity_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.sensitivity_chart_view.setMinimumHeight(300)
+
         layout.addLayout(
             self.make_path_row(
                 "Manifest:",
@@ -263,10 +268,42 @@ class AftermathWindow(QMainWindow):
         run_button.clicked.connect(self.run_sensitivity_report)
 
         layout.addWidget(run_button)
+        layout.addWidget(self.sensitivity_chart_view)
         layout.addWidget(self.sensitivity_output_box)
 
         tab.setLayout(layout)
         return tab
+
+    def update_sensitivity_chart(self, counts):
+        high_count = counts.get("HIGH", 0)
+        medium_count = counts.get("MEDIUM", 0)
+        low_count = counts.get("LOW", 0)
+
+        total = high_count + medium_count + low_count
+
+        series = QPieSeries()
+
+        if total == 0:
+            series.append("No Data", 1)
+        else:
+            high_slice = series.append(f"HIGH ({high_count})", high_count)
+            medium_slice = series.append(f"MEDIUM ({medium_count})", medium_count)
+            low_slice = series.append(f"LOW ({low_count})", low_count)
+
+            high_slice.setBrush(QColor("red"))
+            medium_slice.setBrush(QColor("yellow"))
+            low_slice.setBrush(QColor("green"))
+
+            high_slice.setLabelVisible(True)
+            medium_slice.setLabelVisible(True)
+            low_slice.setLabelVisible(True)
+
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle("Sensitivity Distribution")
+        chart.legend().setVisible(True)
+
+        self.sensitivity_chart_view.setChart(chart)
 
     def run_sensitivity_report(self):
         self.sensitivity_output_box.clear()
@@ -278,6 +315,7 @@ class AftermathWindow(QMainWindow):
             return
 
         counts, sizes, flagged, registry_findings = generate_sensitivity_report(manifest_path)
+        self.update_sensitivity_chart(counts)
 
         lines = []
         lines.append("SENSITIVITY / PRIORITY REPORT")
