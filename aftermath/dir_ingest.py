@@ -77,4 +77,4 @@ def is_valid_kape_output(path: Path) -> bool:
     if has_shortcut:
         score += 1
 
-    return score >= 3
+    return score >= 5
